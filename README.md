@@ -4,13 +4,14 @@ that file to be able to access the final product.
 
 Some information and charecteristics:
 
-This was written in the language R.
-It was done in the form of a quarto document.
-It produces an HTML file.
-The pdf was added from the HTML document but is not to be opened or reffered to.
-Incorporates code folding.
-References all libraries and has reference in text citations and references to any outside resources used.
-This project was given a distinction grade.
+1) This was written in the language R.
+2) It was done in the form of a quarto document.
+3) It produces an HTML file.
+4) The pdf was added from the HTML document but is not to be opened or reffered to.
+5) Incorporates code folding.
+6) References all libraries and has reference in text citations and references to any outside resources used.
+7) Uses Latex for the formulae.
+8) This project was given a distinction grade.
 
 The main theme of this particular project is: University life. Below is the summary of the main findings.
 

@@ -11,3 +11,5 @@ There is no difference in the weighted average marks (WAM) between students with
 The data should have been a proper random sample.
 Results might differ with more data points.
 It seems that there is no significant effect of the access to food and the number of hours a student sleeps on their WAM or a student’s task approach on their mental health for this particular sample of DATA20X2 students.
+
+<img width="1440" alt="image" src="https://github.com/nsegwrg/Individual_DATA2002/assets/149224257/1b5c25e2-d0c2-48c1-9666-907facf4d599">

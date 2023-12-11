@@ -1,0 +1,422 @@
+---
+title: "Analysing University Life"
+author: "520617829"
+format: html
+code-fold: true
+embed-resources: true
+self-contained: true
+code-tools: true
+table-of-contents: true
+number-sections: true
+date: today
+editor: visual
+link-citations: true
+bibliography: reference.bib
+references:
+  - packages.bib
+  
+#packages #referenced
+packages:
+  - ggplot2
+  - dplyr
+  - tidyverse
+  - gt
+  - tidyr
+  - janitor
+  - readr
+---
+
+```{r}
+suppressMessages(library(tidyverse))
+suppressMessages(library(gt))
+suppressMessages(library(tidyr))
+suppressMessages(library(janitor))
+suppressMessages(library(readr))
+suppressMessages(library(ggplot2))
+suppressMessages(library(dplyr))
+knitr::opts_chunk$set(message=FALSE)
+knitr::opts_chunk$set(
+  out.width = "80%",
+  out.height = "400px",
+  fig.show = "hold"
+)
+```
+
+## Introduction
+
+In this report, different aspects of a student's life at university will be examined. The focus is mainly on mental health i.e. anxiety levels and health i.e. sleep and a student's weekly food budget. This report also seeks to find if there are any relations between the above-mentioned areas and academics.
+
+![Fig 1: Beautifully decorated University Hall:Usyd (for aesthetic purposes only)](Image2.png){width="350px"}
+
+### General Discussion on data
+
+In this subsection we will be answering questions on various aspects of the data:
+
+#### The data is not random a random sample of DATA2X02 students
+
+For data to be random, we require that all DATA2X02 students had an equal probability of recording answers. However, the data was collected by putting out a survey in the form of an announcement on ED. This makes students who check ED very often more likely to give answers to the survey. If we wanted to have a truly random sample, it would have been better to individually pick out students and email them.[@random_samples_assumption]
+
+#### Many potential biases
+
+Sampling Bias (each student should have had an equal probability of attempting the survey), Self-Serving Bias (since this was a survey, attempting it might give answers that are more socially acceptable---the most common among these would be WAM; there were over 50 missing values in that column---and height, e.g. men tend to say they are taller than they actually are), Acquiescence Bias (participants tend to say yes to all questions). Overall, all variables in this survey are subject to bias.[@statistical_biases]
+
+#### Units need to be specified and questions require to be framed better
+
+For variables such as height, we need to specify a uniform unit of measure so that data analysis is easier. Also, variables such as sleep/no. of hours a student sleeps in a day should be strictly numerical, not answered in ranges, text, or emojis, as line 277 in the original data was. The questions also need to have specified answers. In the social media column, Instagram and IG were basically the same answer, but analysis is tougher when the spellings of the same variables are different. A drop-down menu would be best.
+
+### Data Wrangling
+
+The data was sourced from a survey distributed via announcement on ED, and was provided to us via Canvas. The initial cleaning took place by renaming columns for clarity and removing columns that were not required for testing our hypotheses. We then checked for missing values; unfortunately, the Weighted Average Mark (WAM) column contained over 50 missing values, which were removed. For the Sleep Hours column, only the numeric part of the data was extracted. A continuous variable was also discretized, or categorized into bins, for better analysis, as will be discussed in the sections below.[@canvas_data_analytics]
+
+```{r, results='hide'}
+
+x = readr::read_csv("/Users/agnelvarghesepaikkatt/Downloads/DATA2x02 survey (2023) (Responses) - Form responses 1.csv")
+
+old_names = colnames(x)
+
+new_names = c("timestamp","n_units","task_approach","age",
+              "life","fass_unit","fass_major","novel",
+              "library","private_health","sugar_days","rent",
+              "post_code","haircut_days","laptop_brand",
+              "urinal_position","stall_position","n_weetbix","food_budget",
+              "pineapple","living_arrangements","height","uni_travel_method",
+              "feel_anxious","study_hrs","work","social_media",
+              "gender","sleep_time","diet","random_number",
+              "steak_preference","dominant_hand","normal_advanced","exercise_hrs",
+              "employment_hrs","on_time","used_r_before","team_role",
+              "social_media_hrs","uni_year","sport","wam","shoe_size")
+# overwrite the old names with the new names:
+colnames(x) = new_names
+# combine old and new into a data frame:
+name_combo = bind_cols(New = new_names, Old = old_names)
+name_combo |> gt::gt()
+```
+
+## Results
+
+### Do children who cram feel more anxious than children who do their tasks immediately and childern who schedule their tasks in a structured way?
+
+To test this hypothesis, we first take into account the variables "task_approach" and "feel_anxious." Since "feel_anxious" is a continuous variable, we bin the column into discrete values. Then, we perform a "chi-squared test of independence." We create a contingency table to check if any of the cell counts are below 5 and plot a barplot of the same. Next, we create a histogram to obtain a good visualization of the data and the densities for different groups and any outliers. After which, we see reinforce the results of the test. (The plotting and testing were not done in this order but is just a preferred way of reporting.) [@types_of_graphs]
+
+```{r, results='hide'}
+#just making a dataset
+df <- data.frame(x)
+
+new_df <- df[,c("task_approach","feel_anxious")]
+
+#checking for the number of null values
+sum(is.na(new_df$feel_anxious))
+sum(is.na(new_df$task_approach))
+
+#Values binned to be categorical
+new_df$feel_anxious <- replace(new_df$feel_anxious, is.na(new_df$feel_anxious), 0)
+
+new_df <- drop_na(new_df, task_approach)
+new_df <- drop_na(new_df, feel_anxious)
+
+#breaks of every 3 hours 
+breaks <- c(0,3,6,9,12,15)
+
+new_df$binned_col <- findInterval(new_df$feel_anxious, breaks)  
+
+tab <- tabyl(new_df, binned_col, task_approach)
+
+chisq = chisq.test(tab)
+
+chisq
+```
+
+1.  **Hypothesis**: $H_0$: Task approach and anxiety are independent of each other. $H_1$: Task approach and anxiety are dependent on each other or associated.
+2.  **Assumptions**:a) Expected frequency in each cell is not less than 5 @fig-Q1_1)
+
+<!-- -->
+
+b)  Variables are categorical: We insured this by binning
+
+<!-- -->
+
+3.  **Test statistic**: $$X^2 = \sum_{i=1}^k \sum_{j=1}^n \frac{(O_{ij}-E_{ij})^2}{E_{ij}}$$
+4.  **Observed test statistic**: 4.3738 with 6 degrees of freedom
+5.  **p-value**: $$p = P(X^2 \geq x_{obs}^2 | H_0)$$ 0.6262
+6.  **Decision**: Since the p-value is not less than the significance level of 0.05 we retain the null hypothesis i.e. task approach and anxiety are independent of each other.
+
+```{r, fig-Q1_1, fig.cap="**Fig 2: Barplot of cell counts and contingency table**"}
+table(new_df$task_approach, new_df$binned_col)
+
+fill = c("black", "darkred", "darkblue", "darkgreen")
+border = "darkblue"
+
+# Bar plot of counts  
+barplot(table(new_df$binned_col), 
+        beside = TRUE,
+        main = "Counts per anxiety bin", col = fill, 
+        border = border)
+
+# Check for cells < 5
+min(table(new_df$task_approach, new_df$binned_col)) < 5
+```
+
+```{r, fig.id='Q1.2', fig.cap="**Fig 3: Histogram of how many students approach a task a certain way and their anxiety levels**"}
+ggplot(new_df, aes(feel_anxious)) +
+  geom_histogram(binwidth = 1, color = "darkred", fill = "black") + 
+  geom_density() +
+  facet_wrap(~task_approach)+
+
+  # Change x axis label
+  xlab("Hrs Feeling Anxious") +
+
+  # Change y axis label
+  ylab("Density")
+```
+
+```{r, fig.id='Q1.3', fig.cap="**Fig 4: Boxplot of how anxious the different task approach groups are**"}
+ggplot(new_df, aes(x=task_approach, y=feel_anxious, 
+                   fill=task_approach)) +
+  geom_boxplot() +
+  scale_x_discrete(labels=c("Cram","Immediate","Schedule")) +
+  xlab("Approach to task") +
+  ylab("Hrs Feeling Anxious") +
+  scale_fill_manual(values = c("black", "darkred", "darkblue"))
+```
+
+#### Points of improvement:
+
+a)  The binned values could give different results based on how they are binned and need to make more logical sense perhaps a different test would be more suitale
+b)  The sample size should be bigger for more precise calculations
+
+### Do students who get more sleep have a higher Weighted Average Mark(WAM)?
+
+To test this hypothesis, we take the columns wam and sleep_time and perform a one-sided Wilcoxon rank sum test. First, we extract the numerical part of the sleep_time column and divide it into high and low groups, which ensures no overlap between the groups. Then, we create a scatterplot to better understand the relationship between the variables, adding a linear regression line to see if there is a visual correlation. We also generate a Q-Q plot, which isn't required for the test but provides information on what type of test would be suitable for the data distribution. Finally, we create a violin plot to visualize and compare the results of the two groups. Please note that the high sleep group consists of people who sleep greater than or equal to 7 hours a day.[@types_of_graphs]
+
+```{r, results='hide'}
+new_dfs <- df[,c("sleep_time","wam")]
+
+sum(is.na(new_dfs$sleep_time))
+sum(is.na(new_dfs$wam))
+#huge chunk of data missing 
+
+
+#Has a range and emoji
+row_to_delete <- 277
+
+new_dfs <- new_dfs[-row_to_delete, ]
+#extracting numeric part
+numeric_part <- parse_number(new_dfs$sleep_time)
+
+new_dfs$numeric_part <- numeric_part
+
+x <- 24
+
+# Remove rows where the value column is greater than x
+#min to hrs removed
+df_filtered <- subset(new_dfs, numeric_part <= x)
+
+df_filtered
+
+df_filtered <- drop_na(df_filtered, numeric_part)
+df_filtered <- drop_na(df_filtered, wam)
+
+df_filtered
+
+cutoff <- 7 
+sleep_group <- ifelse(df_filtered$numeric_part >= cutoff, "High", "Low")
+
+
+wilcox.test(wam ~ sleep_group, 
+            data = df_filtered,
+            alternative = "greater")
+```
+
+1.  **Hypothesis**: $H_0$: There is no difference between the distributions of WAM in the high vs low sleep groups. $H_1$: There is a difference between the distributions of WAM in the high vs low sleep groups.
+2.  **Assumptions**:
+
+<!-- -->
+
+a)  The two groups (high vs low sleep) are independent samples: this is true because we make the groups.
+b)  The outcome variable (wam) is continuous or ordinal: this is true because wam is of type numeric.
+
+<!-- -->
+
+3.  **Test statistic**: $$W = \sum_{i=1}^{n_1} \sum_{j=1}^{n_2} I(X_{ij}>0)$$
+4.  **Observed test statistic**: 5452.5
+5.  **p-value**: $$p = P(W \leq w_{obs}|H_0)$$ 0.1347
+6.  **Decision**: Since the p-value is not less than the significance level of 0.05 we retain the null hypothesis i.e. there is no difference between the distributions of WAM in the high vs low sleep groups.
+
+```{r, fig.id='Q2.1', fig.cap="**Fig 5: QQ plot of high sleep and low sleep groups**"}
+
+# Create separate data frames for each group
+df_high <- df_filtered %>% filter(sleep_group == "High")
+df_low <- df_filtered %>% filter(sleep_group == "Low")
+
+# Generate Q-Q plot 
+qq_high <- ggplot(df_high, aes(sample = wam)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Q-Q Plot - High Sleep Group", x = "Theoretical Quantiles", y = "Sample Quantiles")
+
+qq_low <- ggplot(df_low, aes(sample = wam)) +
+  stat_qq() +
+  stat_qq_line() +
+  labs(title = "Q-Q Plot - Low Sleep Group", x = "Theoretical Quantiles", y = "Sample Quantiles")
+
+qq_high
+qq_low
+```
+
+```{r, fig.id='Q2.2', fig.cap="**Fig 6: Scatterplot of the two variables with a linear regression**"}
+# Create scatterplots
+ggplot(df_filtered, aes(x = numeric_part, y = wam)) +
+  geom_point(color = "brown") + 
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  xlab("Amount of Sleep in Day(hrs)") +
+  ylab("Weighted Average Mark")
+```
+
+```{r, fig.id='Q2.3', fig.cap="**Fig 7: Violin plot of high and low sleep group and their median WAM**"}
+library(ggplot2)
+
+# Create side-by-side box plots
+boxplot <- ggplot(df_filtered, aes(x = sleep_group, y = wam)) +
+  geom_boxplot(fill = c("darkred", "black")) +
+  labs(title = "Weighted Average Mark of High vs Low sleep", x = "Hrs of Sleep(Lesser than 7 is Low)", y = "Weighted Average Mark")
+
+boxplot
+```
+
+#### Points of improvement:
+
+a)  The sample size decreased significantly because of the number of missing values in WAM column.
+b)  Huge loss of data, could have used a predictive model to predict the values of the missing points.
+c)  More diagnostic plots should have been made.
+d)  As said in the introduction these variables are extremely prone to bias.
+
+### Do students who have higher weekly food budgets have higher a WAM?
+
+To test this hypothesis, we take a look at the columns of food_budget and wam, performing a permutation test. First, we generate a Q-Q plot to check which test is best suited for our data distribution. Then, we proceed to make a scatterplot to visualize our data without outliers. Following that, we create a histogram of permuted differences. Finally, we visualize the results of the permutation test with a boxplot. Please note that the grouping of budgets greater than or equal to 50 as "high" budget.[@permutation_test_r]
+
+```{r, results='hide'}
+
+#set the seed
+set.seed(123)
+new_dfss <- df[,c("food_budget","wam")]
+new_dfss
+
+sum(is.na(new_dfss$food_budget))
+sum(is.na(new_dfss$wam))
+
+new_dfss <- drop_na(new_dfss, food_budget)
+new_dfss <- drop_na(new_dfss, wam)
+
+new_dfss
+
+new_dfss$food_category <- ifelse(new_dfss$food_budget >= 50, "high", "low")
+
+
+unique_food_category <- unique(new_dfss$food_category)
+if (!(length(unique_food_category) == 2 && "high" %in% unique_food_category && "low" %in% unique_food_category)) {
+  stop("The 'food_category' column should contain exactly two levels: 'high' and 'low'. Please check your data.")
+}
+
+
+observed_difference <- mean(new_dfss$wam[new_dfss$food_category == "high"]) - mean(new_dfss$wam[new_dfss$food_category == "low"])
+
+# Number of permutations
+num_permutations <- 1000
+
+
+permuted_differences <- numeric(num_permutations)
+
+# Permutation test
+for (i in 1:num_permutations) {
+  # Shuffle 
+  shuffled_food_budget <- sample(new_dfss$food_category)
+  
+  # difference in WAM for this permutation
+  permuted_difference <- mean(new_dfss$wam[shuffled_food_budget == "high"]) - mean(new_dfss$wam[shuffled_food_budget == "low"])
+  
+  permuted_differences[i] <- permuted_difference
+}
+
+# Calculate the p-value
+p_value <- mean(permuted_differences >= observed_difference)
+
+cat("Observed Difference:", observed_difference, "\n")
+cat("Permutation Test p-value:", p_value, "\n")
+
+```
+
+1.  **Hypothesis**: $H_0$: There is no difference in the weighted average marks (WAM) between students with a high weekly food budget and students with a low weekly food budget. $H_1$: There is a difference in the weighted average marks (WAM) between students with a high weekly food budget and students with a low weekly food budget.
+2.  **Assumptions**:
+
+<!-- -->
+
+a)  Independence: The two groups are not influenced by the wam of another @fig-Q3_2)
+b)  Similar variabilty: A box plot is made for the same
+
+<!-- -->
+
+3.  **Test statistic**: $$D_{obs} = \bar{X}{high} - \bar{X}{low}$$
+4.  **Observed test statistic**:-4.210099\
+5.  **p-value**: $$p = P(|D^*| \geq |D_{obs}| | H_0)$$ 0.933
+6.  **Decision**: Since the p-value is not less than the significance level of 0.05 we retain the null hypothesis i.e.there is no difference in the weighted average marks (WAM) between students with a high weekly food budget and students with a low weekly food budget.
+
+```{r, fig.id='Q3.1', fig.cap="**Fig 8: QQ plot for the variables wam and food_budget**"}
+qqnorm(new_dfss$wam)
+qqline(new_dfss$wam)
+qqnorm(new_dfss$food_budget)
+qqline(new_dfss$food_budget)
+```
+
+```{r, fig-Q3_2, fig.cap="**Fig 9: Box plot of high and low budget and their median wam**"}
+library(ggplot2)
+ggplot(new_dfss, aes(x = food_category, y = wam)) +
+  geom_boxplot(fill = c("darkred", "black")) +
+  labs(x = "Food Budget", y = "WAM Score") +
+  ggtitle("Boxplot of WAM Scores by Food Budget\n")
+```
+
+```{r, fig.id='Q3.3', fig.cap="**Fig 10: Scatterplot without food_budget outliers to visualise correlation**"}
+new_dfss <- new_dfss %>%
+  mutate(z_score_food_budget = (food_budget - mean(food_budget)) / sd(food_budget))
+
+# Define a z-score threshold for outlier removal
+z_threshold_food_budget <- 2
+
+new_dfss_filtered <- new_dfss %>%
+  filter(abs(z_score_food_budget) <= z_threshold_food_budget)
+
+# Create the scatterplot with food_budget outliers removed
+ggplot(new_dfss_filtered, aes(x = food_budget, y = wam)) +
+  geom_point(color = "darkred") +
+  labs(x = "Food Budget", y = "WAM Score") +
+  ggtitle("Scatterplot of Food Budget vs. WAM (Food Budget Outliers Removed)")
+```
+
+```{r, fig.id='Q3.4', fig.cap="**Fig 11: Hidtogram of Permuted Differences**"}
+ggplot(data.frame(Permuted_Differences = permuted_differences), aes(x = Permuted_Differences)) +
+  geom_histogram(binwidth = 0.5, fill = "black", color = "darkred") +
+  geom_vline(xintercept = observed_difference, color = "black", linetype = "dashed") +
+  labs(x = "Permuted Differences", y = "Frequency") +
+  ggtitle("Distribution of Permuted Differences")
+```
+
+#### Points of improvement:
+
+a)  The sample size decreased significantly because of the number of missing values in WAM column.
+b)  Huge loss of data, could have used a predictive model to predict the values of the missing points.
+c)  The data acquiring process should have been random for this permutaion test to succeed.
+d)  The results might not be accurate.
+e)  Too many plots.
+
+## Conclusion
+
+1)  Task approach and anxiety are independent of each other for this sample of DATA20X2 students.
+2)  There is no difference between the distributions of WAM in the high vs low sleep groups for this sample of DATA20X2 students.
+3)  There is no difference in the weighted average marks (WAM) between students with a high weekly food budget and students with a low weekly food budget for this sample of DATA20X2 students.
+4)  The data should have been a proper random sample.
+5)  Results might differ with more data points.
+6)  It seems that there is no significant effect of the access to food and the number of hours a student sleeps on their WAM or a student's task approach on their mental health for this particular sample of DATA20X2 students.
+
+## References
+
+‌

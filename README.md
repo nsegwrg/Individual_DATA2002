@@ -2,6 +2,16 @@
 An individual assignment that uses data collected from a survey to submit findings using Hypotheses Tests. The main code is in Fin.qmd kindly render 
 that file to be able to access the final product.
 
+Some information and charecteristics:
+
+This was written in the language R.
+It was done in the form of a quarto document.
+It produces an HTML file.
+The pdf was added from the HTML document but is not to be opened or reffered to.
+Incorporates code folding.
+References all libraries and has reference in text citations and references to any outside resources used.
+This project was given a distinction grade.
+
 The main theme of this particular project is: University life. Below is the summary of the main findings.
 
 
